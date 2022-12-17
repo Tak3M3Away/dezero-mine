@@ -9,6 +9,13 @@ class Variable:
     def set_creator(self, func):
         self.creator = func
 
+    def backward(self):
+        f = self.creator
+        if f is not None:
+            x = f.input
+            x.grad = f.backward(self.grad)
+            x.backward()
+
 class Function:
     def __call__(self, input):
         x = input.data
@@ -50,5 +57,3 @@ def numerical_diff(f, x, eps=1e-4):
     y0 = f(x0)
     y1 = f(x1)
     return (y1.data - y0.data) / (2 * eps)
-
-print("githubflow")
