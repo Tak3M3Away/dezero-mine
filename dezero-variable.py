@@ -1,4 +1,5 @@
 import numpy as np
+import unittest
 
 class Variable:
     def __init__(self, data):
@@ -60,6 +61,13 @@ class Exp(Function):
         x = self.input.data
         gx = np.exp(x) * gy
         return gx
+
+class Squaretest(unittest.TestCase):
+    def test_forward(self):
+        x = Variable(np.array(2.0))
+        y = square(x)
+        expected = np.array(4.0)
+        self.assertEqual(y.data, expected)
 
 def numerical_diff(f, x, eps=1e-4):
     x0 = Variable(x.data - eps)
