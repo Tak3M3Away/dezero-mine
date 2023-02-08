@@ -21,26 +21,34 @@ class Variable:
         funcs = [self.creator]
         while funcs:
             f = funcs.pop()
-            x, y = f.input, f.output
-            x.grad = f.backward(y.grad)
+            gys = [output.grad for output in f.outputs]
+            gxs = f.backward(*gys)
+            if not isinstance(gxs, tuple):
+                gxs = (gxs,)
+
+            for x, gx in zip
 
             if x.creator is not None:
                 funcs.append(x.creator)
 
 class Function:
-    def __call__(self, input):
-        x = input.data
-        y = self.forward(x)
-        output = Variable(as_array(y))
-        output.set_creator(self)
-        self.input = input
-        self.output = output
-        return output
+    def __call__(self, *inputs):
+        xs = [x.data for x in inputs]
+        ys = self.forward(*xs)
+        if not isinstance(ys, tuple):
+            ys = (ys,)
+        outputs = [Variable(as_array(y)) for y in ys]
 
-    def forward(self, x):
+        for output in outputs:
+            output.set_creator(self)
+        self.inputs = inputs
+        self.outputs = outputs
+        return outputs if len(outputs) > 1 else outputs[0]
+
+    def forward(self, xs):
         raise NotImplementedError()
 
-    def backward(self, gy):
+    def backward(self, gys):
         raise NotImplementedError()
 
 class Square(Function):
@@ -84,6 +92,14 @@ class Squaretest(unittest.TestCase):
         flg = np.allclose(x.grad, num_grad)
         self.assertTrue(flg)
 
+class Add(Function):
+    def forward(self, x0, x1):
+        y = x0 + x1
+        return y
+
+    def backward (self, gy):
+        return gy, gy
+
 def numerical_diff(f, x, eps=1e-4):
     x0 = Variable(x.data - eps)
     x1 = Variable(x.data + eps)
@@ -101,3 +117,6 @@ def as_array(x):
     if np.isscalar(x):
         return np.array(x)
     return x
+
+def add(x0, x1):
+    return Add()(x0, x1)
